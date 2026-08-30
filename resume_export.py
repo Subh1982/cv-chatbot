@@ -1,4 +1,4 @@
-"""Create ATS-friendly DOCX and PDF resumes from editable plain-text content."""
+"""Create ATS-friendly Word resumes from editable plain-text content."""
 
 from io import BytesIO
 from xml.sax.saxutils import escape
@@ -132,9 +132,12 @@ def build_docx(resume_text: str) -> bytes:
             run = paragraph.add_run(content)
             _set_cell_free_font(run, size=10.5, color=MUTED if "@" in content else None)
 
+    candidate_name = next(
+        (content for kind, content in blocks if kind == "title"), "Candidate"
+    )
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = footer.add_run("Subh Bhattacharyya | CV")
+    run = footer.add_run(f"{candidate_name} | CV")
     _set_cell_free_font(run, size=8.5, color=MUTED)
 
     output = BytesIO()
@@ -145,6 +148,10 @@ def build_docx(resume_text: str) -> bytes:
 def build_pdf(resume_text: str) -> bytes:
     """Build a polished single-column PDF resume in memory."""
     output = BytesIO()
+    candidate_name = next(
+        (content for kind, content in parse_resume(resume_text) if kind == "title"),
+        "Candidate",
+    )
     document = SimpleDocTemplate(
         output,
         pagesize=LETTER,
@@ -152,8 +159,8 @@ def build_pdf(resume_text: str) -> bytes:
         leftMargin=0.8 * inch,
         topMargin=0.72 * inch,
         bottomMargin=0.72 * inch,
-        title="Subh Bhattacharyya - CV",
-        author="Subh Bhattacharyya",
+        title=f"{candidate_name} - CV",
+        author=candidate_name,
     )
     styles = getSampleStyleSheet()
     body = ParagraphStyle(
@@ -218,7 +225,9 @@ def build_pdf(resume_text: str) -> bytes:
         canvas.saveState()
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(colors.HexColor("#667085"))
-        canvas.drawCentredString(LETTER[0] / 2, 0.35 * inch, f"Subh Bhattacharyya | CV | {doc.page}")
+        canvas.drawCentredString(
+            LETTER[0] / 2, 0.35 * inch, f"{candidate_name} | CV | {doc.page}"
+        )
         canvas.restoreState()
 
     document.build(story, onFirstPage=footer, onLaterPages=footer)

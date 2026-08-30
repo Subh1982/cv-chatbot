@@ -7,10 +7,12 @@ from docx import Document
 from pypdf import PdfReader
 
 from app import (
+    APP_TITLE,
     DEFAULT_MODEL,
     FALLBACK_MESSAGE,
     answer_question,
     assess_job_fit,
+    extract_cv_text,
     get_api_key,
     safe_export_name,
     suggest_cv_improvements,
@@ -66,9 +68,12 @@ def test_default_model_is_available_to_new_users():
     assert DEFAULT_MODEL == "gemini-3.5-flash-lite"
 
 
+def test_app_is_generic():
+    assert APP_TITLE == "CV-JD Compatibility Checker"
+
+
 def test_fallback_is_friendly_and_actionable():
-    assert "CV doesn’t clearly provide an answer" in FALLBACK_MESSAGE
-    assert "Please call Subh at 0492205682" in FALLBACK_MESSAGE
+    assert "uploaded CV does not clearly provide an answer" in FALLBACK_MESSAGE
 
 
 def test_job_url_must_be_complete_public_web_url():
@@ -85,6 +90,7 @@ def test_job_url_must_be_complete_public_web_url():
 def test_job_assessment_uses_url_context_and_clamps_score(client):
     payload = {
         "accessible": True,
+        "candidate_name": "Alex Candidate",
         "job_title": "Product Manager",
         "company": "Example Co",
         "score": 105,
@@ -108,6 +114,7 @@ def test_job_assessment_uses_url_context_and_clamps_score(client):
 def test_inaccessible_job_page_has_clear_error(client):
     payload = {
         "accessible": False,
+        "candidate_name": "",
         "job_title": "",
         "company": "",
         "score": 0,
@@ -127,6 +134,7 @@ def test_inaccessible_job_page_has_clear_error(client):
 def test_pasted_job_description_does_not_use_url_context(client):
     payload = {
         "accessible": True,
+        "candidate_name": "Alex Candidate",
         "job_title": "Senior Product Manager",
         "company": "Example Co",
         "score": 85,
@@ -165,7 +173,7 @@ def test_short_pasted_job_description_is_rejected():
 def test_tailored_cv_generation_uses_only_pasted_job_context(client):
     payload = {
         "suggestions": ["Prioritise relevant product leadership outcomes."],
-        "tailored_cv": "# Subh Bhattacharyya\n## Experience\n- Led product strategy.",
+        "tailored_cv": "# Alex Candidate\n## Experience\n- Led product strategy.",
     }
     response = SimpleNamespace(text=json.dumps(payload))
     calls = []
@@ -176,7 +184,7 @@ def test_tailored_cv_generation_uses_only_pasted_job_context(client):
 
     result = suggest_cv_improvements("", job, "Original CV", "test")
 
-    assert result["tailored_cv"].startswith("# Subh")
+    assert result["tailored_cv"].startswith("# Alex")
     assert calls[0]["config"].tools is None
     assert "Never invent" in calls[0]["contents"]
 
@@ -197,8 +205,8 @@ def test_short_edited_cv_is_blocked_without_api_call():
 
 def test_docx_and_pdf_exports_are_valid_documents():
     text = (
-        "# Subh Bhattacharyya\n"
-        "Mobile: 0492 205 682 | Email: subh.bhatt22@gmail.com\n"
+        "# Alex Candidate\n"
+        "Email: alex@example.com\n"
         "## Profile\nProduct leader with digital experience.\n"
         "## Experience\n### Senior Product Manager\n"
         "- Led product strategy and measurable delivery outcomes.\n"
@@ -210,13 +218,28 @@ def test_docx_and_pdf_exports_are_valid_documents():
 
     assert docx_bytes.startswith(b"PK")
     doc = Document(BytesIO(docx_bytes))
-    assert "Subh Bhattacharyya" in "\n".join(p.text for p in doc.paragraphs)
+    assert "Alex Candidate" in "\n".join(p.text for p in doc.paragraphs)
     assert pdf_bytes.startswith(b"%PDF")
     pdf = PdfReader(BytesIO(pdf_bytes))
-    assert "Subh Bhattacharyya" in (pdf.pages[0].extract_text() or "")
+    assert "Alex Candidate" in (pdf.pages[0].extract_text() or "")
+
+
+def test_docx_cv_upload_is_readable():
+    source = Document()
+    source.add_heading("Alex Candidate", level=1)
+    source.add_paragraph("Product manager with digital delivery experience.")
+    stream = BytesIO()
+    source.save(stream)
+    stream.seek(0)
+    stream.name = "alex-cv.docx"
+
+    extracted = extract_cv_text(stream)
+
+    assert "Alex Candidate" in extracted
+    assert "digital delivery experience" in extracted
 
 
 def test_export_filename_is_safe():
-    assert safe_export_name("Senior Product Manager / AI", "pdf") == (
-        "Subh_Bhattacharyya_CV_Senior_Product_Manager_AI.pdf"
+    assert safe_export_name("Alex Candidate", "Senior Product Manager / AI") == (
+        "Alex_Candidate_CV_Senior_Product_Manager_AI.docx"
     )

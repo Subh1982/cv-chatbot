@@ -1,22 +1,18 @@
-# Subh's CV Chatbot
+# CV-JD Compatibility Checker
 
-A grounded Streamlit chatbot that answers questions using only Subh
-Bhattacharyya's CV. If the answer is not supported by the CV, the application
-returns exactly:
+A generic Streamlit application for comparing any uploaded CV with a job
+description. Users can upload a PDF or DOCX CV, paste a job description or
+provide a public job link, and receive:
 
-> I’m sorry, but Subh’s CV doesn’t clearly provide an answer to that question.
-> Please call Subh at 0492205682 for further information.
+- A 0-100 compatibility score and justification
+- Evidence-based strengths
+- Gaps or requirements not clearly evidenced in the CV
+- Fact-preserving recommendations to improve the CV
+- A complete editable tailored CV
+- A validated Microsoft Word download
 
-The app also accepts a direct public job-description URL or pasted job-description
-text and produces a 0–100 suitability score, overall justification, evidence-based
-strengths, and gaps or requirements that are not clearly evidenced in the CV.
-It can then suggest fact-preserving CV improvements, provide an editable tailored
-draft, validate user edits against the original CV, and export the approved CV as
-DOCX or PDF.
-
-The app uses Google's official `google-genai` SDK and defaults to the stable
-`gemini-3.5-flash-lite` model, which is available on the Gemini API free tier
-(subject to Google's current limits and regional availability).
+The app uses Google's official `google-genai` SDK and defaults to
+`gemini-3.5-flash-lite`.
 
 ## Run locally
 
@@ -41,29 +37,24 @@ The app uses Google's official `google-genai` SDK and defaults to the stable
    streamlit run app.py
    ```
 
-The supplied CV is stored at `assets/CV PM_Subh Bhatt.pdf`, so the default works
-locally and in cloud deployments. You can still upload a different PDF in the
-sidebar or override the default with `CV_PATH`.
+Every user uploads their own CV. The application does not preload a candidate
+or retain uploaded documents between sessions.
 
 ## Deploy
 
-For Streamlit Community Cloud, add `GEMINI_API_KEY` under **App settings →
-Secrets**. The default CV is already included in the repository. Do not commit
-API keys or a local `.streamlit/secrets.toml` file.
+For Streamlit Community Cloud, add `GEMINI_API_KEY` under **App settings ->
+Secrets**. Do not commit API keys or a local `.streamlit/secrets.toml` file.
 
-## Grounding safeguards
+## Factual safeguards
 
-- Every question is sent with the extracted text of the CV.
-- Gemini must return structured JSON declaring whether the answer is supported.
-- The friendly fallback is inserted by application code—not left to model wording.
-- Invalid or empty model output also resolves to the fallback.
+- Compatibility is assessed only from the uploaded CV and supplied job description.
 - Job links are read using Gemini URL Context; the app server does not fetch
   arbitrary URLs itself.
 - LinkedIn and other login-protected job boards can be assessed by copying and
   pasting the job-description text into the app.
-- Job suitability uses a documented 100-point rubric and distinguishes a genuine
-  mismatch from experience that is simply not evidenced in the CV.
+- Missing evidence is described as unclear or unverified, not as proof that the
+  candidate lacks a skill.
 - Tailored CV drafts can reorder, clarify and foreground existing evidence but are
   explicitly instructed not to add or strengthen facts.
-- A separate Gemini audit blocks DOCX/PDF export when edited claims are unsupported
-  by, contradictory to, or stronger than the original CV.
+- A separate Gemini audit blocks Word export when edited claims are unsupported,
+  contradictory to, or stronger than the uploaded CV.
