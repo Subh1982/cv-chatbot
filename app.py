@@ -18,6 +18,7 @@ FALLBACK_MESSAGE = (
 )
 DEFAULT_MODEL = "gemini-3.5-flash-lite"
 DEFAULT_CV_PATH = Path()
+HERO_IMAGE_PATH = Path(__file__).resolve().parent / "assets" / "cv-review-hero.png"
 
 
 def extract_cv_text(cv_source) -> str:
@@ -621,6 +622,11 @@ def render_generic_app() -> None:
         'Get an evidence-based compatibility score, tailor the CV without inventing '
         'facts, and download the edited version as a Word document.</div>',
         unsafe_allow_html=True,
+    )
+    st.image(
+        str(HERO_IMAGE_PATH),
+        caption="Compare your CV with the role and focus your application.",
+        use_container_width=True,
     )
 
     api_key = get_api_key()
