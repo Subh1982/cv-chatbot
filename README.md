@@ -9,7 +9,7 @@ provide a public job link, and receive:
 - Gaps or requirements not clearly evidenced in the CV
 - Fact-preserving recommendations to improve the CV
 - A complete editable tailored CV
-- A validated Microsoft Word download
+- A Microsoft Word download of the edited CV
 
 The app uses Google's official `google-genai` SDK and defaults to
 `gemini-3.5-flash-lite`.
@@ -56,5 +56,5 @@ Secrets**. Do not commit API keys or a local `.streamlit/secrets.toml` file.
   candidate lacks a skill.
 - Tailored CV drafts can reorder, clarify and foreground existing evidence but are
   explicitly instructed not to add or strengthen facts.
-- A separate Gemini audit blocks Word export when edited claims are unsupported,
-  contradictory to, or stronger than the uploaded CV.
+- Users remain responsible for reviewing the edited draft and ensuring every claim
+  is supported by the original CV before generating the Word document.

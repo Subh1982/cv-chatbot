@@ -630,17 +630,18 @@ def render_generic_app() -> None:
     )
 
     api_key = get_api_key()
-    with st.sidebar:
-        st.header("Setup")
+    setup_col, reset_col = st.columns([3, 1])
+    with setup_col:
         if not api_key:
             api_key = st.text_input("Gemini API key", type="password")
             st.caption("The key is used only for this session and is not stored.")
-        st.caption(f"Model: `{os.getenv('GEMINI_MODEL', DEFAULT_MODEL)}`")
+        else:
+            st.caption("Gemini API access is configured.")
+    with reset_col:
         if st.button("Start over", use_container_width=True):
             for key in (
                 "job_assessment", "job_url", "job_description", "original_cv_text",
                 "tailored_cv", "tailored_cv_editor", "cv_export",
-                "cv_validation_issues",
             ):
                 st.session_state.pop(key, None)
             st.rerun()
@@ -670,7 +671,7 @@ def render_generic_app() -> None:
         if uploaded_cv is None:
             st.warning("Upload a PDF or DOCX CV first.")
         elif not api_key:
-            st.warning("Add a Gemini API key in the sidebar first.")
+            st.warning("Add a Gemini API key above first.")
         else:
             try:
                 with st.spinner("Reading the CV and evaluating compatibility…"):
@@ -737,7 +738,6 @@ def render_generic_app() -> None:
                 st.session_state.tailored_cv = tailored
                 st.session_state.tailored_cv_editor = tailored["tailored_cv"]
                 st.session_state.pop("cv_export", None)
-                st.session_state.pop("cv_validation_issues", None)
         except Exception as exc:
             st.error(f"The tailored draft could not be generated: {exc}")
 
@@ -750,47 +750,30 @@ def render_generic_app() -> None:
             st.markdown(f"- {suggestion}")
 
     st.caption(
-        "Edit the draft below. Rewording and reordering are allowed, but unsupported "
-        "new claims will be blocked during validation."
+        "Edit the draft below before generating the Word document. Review all content "
+        "carefully and do not add claims that are not supported by the original CV."
     )
     with st.form("generic_tailored_cv_form"):
         edited_cv = st.text_area(
             "Editable tailored CV", key="tailored_cv_editor", height=650
         )
         create_file = st.form_submit_button(
-            "Validate and generate Word CV", type="primary", use_container_width=True
+            "Generate Word CV", type="primary", use_container_width=True
         )
 
     if create_file:
         try:
-            with st.spinner("Checking every claim against the uploaded CV…"):
-                validation = validate_cv_edits(
-                    edited_cv,
-                    cv_text,
-                    api_key,
-                    os.getenv("GEMINI_MODEL", DEFAULT_MODEL),
-                )
-            if not validation["valid"]:
-                st.session_state.cv_validation_issues = validation["issues"]
-                st.session_state.pop("cv_export", None)
-            else:
+            with st.spinner("Generating the Word CV…"):
                 st.session_state.cv_export = {
                     "data": build_docx(edited_cv),
                     "name": safe_export_name(candidate, title),
                 }
-                st.session_state.pop("cv_validation_issues", None)
         except Exception as exc:
             st.error(f"The Word CV could not be generated: {exc}")
 
-    issues = st.session_state.get("cv_validation_issues", [])
-    if issues:
-        st.error("Correct these factual issues before exporting:")
-        for issue in issues:
-            st.markdown(f"- {issue}")
-
     export = st.session_state.get("cv_export")
     if export:
-        st.success("The edited CV passed the factual check and is ready.")
+        st.success("The edited Word CV is ready.")
         st.download_button(
             "Download Word CV",
             data=export["data"],
