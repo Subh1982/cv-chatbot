@@ -361,7 +361,7 @@ def render_app() -> None:
         <style>
         .block-container {max-width: 820px; padding-top: 3rem;}
         [data-testid="stChatMessage"] {border-radius: 16px; padding: .35rem .75rem;}
-        .eyebrow {color:#4f46e5; font-size:.78rem; font-weight:700;
+        .eyebrow {color:#2563eb; font-size:.78rem; font-weight:700;
                   letter-spacing:.12em; text-transform:uppercase;}
         .subtitle {color:#667085; font-size:1.05rem; margin-bottom:1.6rem;}
         </style>
@@ -608,7 +608,7 @@ def render_generic_app() -> None:
         """
         <style>
         .block-container {max-width: 900px; padding-top: 2.5rem; padding-bottom: 4rem;}
-        .eyebrow {color:#4f46e5; font-size:.78rem; font-weight:700;
+        .eyebrow {color:#2563eb; font-size:.78rem; font-weight:700;
                   letter-spacing:.12em; text-transform:uppercase;}
         .subtitle {color:#667085; font-size:1.05rem; margin-bottom:1.4rem;}
         </style>
